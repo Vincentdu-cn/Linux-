@@ -1,3 +1,6 @@
+> Linux等保修复一键脚本，包含配置审计规则、配置密码策略、配置登录失败次数及锁定策略功能。
+
+```bash
 #!/bin/bash
 
 # 定义日志文件
@@ -39,26 +42,52 @@ configure_password_policy() {
     sed -i '/^PASS_WARN_AGE/c\PASS_WARN_AGE   5' /etc/login.defs
 
     if [ -f /etc/debian_version ]; then
-        log "检测到 Ubuntu/Debian 系统，检查 libpam-cracklib 是否已安装..."
-        if dpkg -l | grep -q libpam-cracklib; then
-            log "libpam-cracklib 已安装。"
+        log "检测到 Ubuntu/Debian 系统，检查 libpam-pwquality 是否已安装..."
+        if dpkg -l | grep -q libpam-pwquality; then
+            log "libpam-pwquality 已安装。"
         else
-            log "libpam-cracklib 未安装，正在安装..."
+            log "libpam-pwquality 未安装，正在安装..."
             apt-get update
-            apt-get install -y libpam-cracklib
+            apt-get install -y libpam-pwquality
         fi
-        echo "password requisite pam_cracklib.so retry=3 minlen=8 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1" >> /etc/pam.d/common-password
+        echo "password requisite pam_pwquality.so retry=3 minlen=8 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1" >> /etc/pam.d/common-password
     elif [ -f /etc/redhat-release ]; then
         log "检测到 CentOS/RHEL 系统，配置 /etc/pam.d/system-auth..."
         echo "password requisite pam_pwquality.so try_first_pass local_users_only retry=5 authtok_type= minlen=8 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1" >> /etc/pam.d/system-auth
     fi
+    
     log "密码策略配置完成。"
 }
 
 # 配置登录失败次数及锁定策略
 configure_login_failures() {
     log "配置登录失败次数及锁定策略..."
-    echo "auth required pam_tally2.so deny=3 unlock_time=300 account required pam_tally2.so" >> /etc/pam.d/sshd
+    # 定义要添加的配置行
+    PAM_FAILLOCK_CONFIG="auth required pam_faillock.so preauth silent deny=3 unlock_time=300\nauth [default=die] pam_faillock.so authfail deny=3 unlock_time=300\naccount required pam_faillock.so"
+
+    # 更新 /etc/pam.d/sshd
+    echo "更新 /etc/pam.d/sshd ..."
+    if ! grep -q "pam_faillock.so" /etc/pam.d/sshd; then
+      echo -e "$PAM_FAILLOCK_CONFIG" >> /etc/pam.d/sshd
+      echo "已更新 /etc/pam.d/sshd。"
+    else
+      echo "/etc/pam.d/sshd 已包含 pam_faillock 配置。"
+    fi
+
+    # 更新 /etc/pam.d/common-auth
+    echo "更新 /etc/pam.d/common-auth ..."
+    if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
+      sed -i "1i $PAM_FAILLOCK_CONFIG" /etc/pam.d/common-auth
+      echo "已更新 /etc/pam.d/common-auth。"
+    else
+      echo "/etc/pam.d/common-auth 已包含 pam_faillock 配置。"
+    fi
+
+    # 重启 SSH 服务
+    echo "重启 SSH 服务 ..."
+    systemctl restart ssh
+    echo "SSH 服务已重启。"
+    
     log "登录失败次数及锁定策略配置完成。"
 }
 
@@ -101,3 +130,4 @@ while true; do
             ;;
     esac
 done
+```
