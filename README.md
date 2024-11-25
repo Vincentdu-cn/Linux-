@@ -1,6 +1,6 @@
 # Linux等保修复一键脚本
 Linux等保修复一键脚本，包含syslog读取、配置审计规则、配置密码策略、配置登录失败次数及锁定策略等功能。
-## 生产环境慎用一键修复，更改密码策略前先修改密码符合新的密码策略。
+## 生产环境慎用一键修复，更改密码策略前先修改密码符合新的密码策略!!!
 ```shell
 password requisite pam_cracklib.so retry=3 minlen=8 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1
 ```
