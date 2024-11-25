@@ -14,3 +14,11 @@ password requisite pam_cracklib.so retry=3 minlen=8 difok=3 ucredit=-1 lcredit=-
 * `lcredit=-1`：密码中至少需要包含 1 个小写字母。
 * `dcredit=-1`：密码中至少需要包含 1 个数字。
 * `ocredit=-1`：密码中至少需要包含 1 个特殊字符（如 `!@#$%^&*` 等）。
+
+## 运行脚本
+```shell
+chmod +x config_update.sh
+./config_update.sh
+```
+
+![0YBBQ$NZGK9W F2{}PS588V](https://github.com/user-attachments/assets/8cb0da17-ef53-4d8b-ac7f-2241a5c49551)
