@@ -1,6 +1,3 @@
-> Linux等保修复一键脚本，包含配置审计规则、配置密码策略、配置登录失败次数及锁定策略功能。
-
-```bash
 #!/bin/bash
 
 # 定义日志文件
@@ -85,6 +82,12 @@ configure_login_failures() {
     log "登录失败次数及锁定策略配置完成。"
 }
 
+# 配置SSH登录超时策略
+configure_sshlogin() {
+    log "配置SSH登录超时策略..."
+    echo "ClientAliveInterval 1800\nClientAliveCountMax 2" >> /etc/ssh/sshd_config
+    log "SSH登录超时策略配置完成。"
+
 # 显示菜单
 show_menu() {
     echo "请选择要执行的操作："
@@ -92,7 +95,8 @@ show_menu() {
     echo "2) 配置审计规则"
     echo "3) 配置密码策略"
     echo "4) 配置登录失败次数及锁定策略"
-    echo "5) 退出"
+    echo "5) 配置SSH登录超时策略"
+    echo "6) 退出"
 }
 
 # 主程序
@@ -117,6 +121,10 @@ while true; do
             configure_login_failures
             ;;
         5)
+        
+            configure_sshlogin
+            ;;
+        6)
             log "退出脚本。"
             exit 0
             ;;
@@ -125,4 +133,3 @@ while true; do
             ;;
     esac
 done
-```
