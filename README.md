@@ -40,4 +40,4 @@ chmod +x config_update.sh
 ./config_update.sh
 ```
 
-![0YBBQ$NZGK9W F2{}PS588V](https://github.com/user-attachments/assets/8cb0da17-ef53-4d8b-ac7f-2241a5c49551)
+![1JU%XPNJB7K0T0(MUVXHT7L](https://github.com/user-attachments/assets/984365bb-67e9-496a-88b6-4c5b4a3b29ab)
