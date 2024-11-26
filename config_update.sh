@@ -21,14 +21,14 @@ log() {
 configure_audit_rules() {
     log "配置审计规则..."
     cat <<EOL >> /etc/audit/rules.d/audit.rules
--w /etc/group -p wa -k identity
--w /etc/passwd -p wa -k identity
--w /etc/gshadow -p wa -k identity
--w /etc/shadow -p wa -k identity
--w /etc/security/opasswd -p wa -k identity
--w /var/log/lastlog -p wa -k logins
--w /var/run/faillock -p wa -k logins
-EOL
+    -w /etc/group -p wa -k identity
+    -w /etc/passwd -p wa -k identity
+    -w /etc/gshadow -p wa -k identity
+    -w /etc/shadow -p wa -k identity
+    -w /etc/security/opasswd -p wa -k identity
+    -w /var/log/lastlog -p wa -k logins
+    -w /var/run/faillock -p wa -k logins
+    EOL
     service auditd restart
     log "审计规则配置完成。"
 }
@@ -50,7 +50,16 @@ configure_password_policy() {
             apt-get update
             apt-get install -y libpam-pwquality
         fi
-        echo "password requisite pam_pwquality.so retry=3 minlen=8 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1" >> /etc/pam.d/common-password
+        log "写入pwquality.conf..."
+        cat <<EOL > /etc/security/pwquality.conf
+        minlen = 8
+        dcredit = -1
+        ucredit = -1
+        lcredit = -1
+        ocredit = -1
+        difok = 3
+        EOL
+        
     elif [ -f /etc/redhat-release ]; then
         log "检测到 CentOS/RHEL 系统，配置 /etc/pam.d/system-auth..."
         echo "password requisite pam_pwquality.so try_first_pass local_users_only retry=5 authtok_type= minlen=8 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1" >> /etc/pam.d/system-auth
@@ -62,31 +71,16 @@ configure_password_policy() {
 # 配置登录失败次数及锁定策略
 configure_login_failures() {
     log "配置登录失败次数及锁定策略..."
-    # 定义要添加的配置行
-    PAM_FAILLOCK_CONFIG="auth required pam_faillock.so preauth silent deny=3 unlock_time=300\nauth [default=die] pam_faillock.so authfail deny=3 unlock_time=300\naccount required pam_faillock.so"
-
-    # 更新 /etc/pam.d/sshd
-    echo "更新 /etc/pam.d/sshd ..."
-    if ! grep -q "pam_faillock.so" /etc/pam.d/sshd; then
-      echo -e "$PAM_FAILLOCK_CONFIG" >> /etc/pam.d/sshd
-      echo "已更新 /etc/pam.d/sshd。"
-    else
-      echo "/etc/pam.d/sshd 已包含 pam_faillock 配置。"
-    fi
-
-    # 更新 /etc/pam.d/common-auth
-    echo "更新 /etc/pam.d/common-auth ..."
-    if ! grep -q "pam_faillock.so" /etc/pam.d/common-auth; then
-      sed -i "1i $PAM_FAILLOCK_CONFIG" /etc/pam.d/common-auth
-      echo "已更新 /etc/pam.d/common-auth。"
-    else
-      echo "/etc/pam.d/common-auth 已包含 pam_faillock 配置。"
-    fi
-
-    # 重启 SSH 服务
-    echo "重启 SSH 服务 ..."
-    systemctl restart ssh
-    echo "SSH 服务已重启。"
+   
+    line1="auth  [default=die]  pam_faillock.so authfail audit deny=5 unlock_time=600 fail_interval=900"
+    line2="auth  sufficient  pam_faillock.so authsucc audit deny=5 unlock_time=600 fail_interval=900"
+    # 定义目标文件
+    file="/etc/pam.d/common-auth"
+    
+    # 使用 sed 插入行
+    sed -i "/pam_unix.so/a\\
+    $line1\\
+    $line2" "$file"
     
     log "登录失败次数及锁定策略配置完成。"
 }
@@ -119,6 +113,7 @@ while true; do
             configure_password_policy
             ;;
         4)
+        
             configure_login_failures
             ;;
         5)
