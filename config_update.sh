@@ -18,14 +18,14 @@ log() {
 configure_audit_rules() {
     log "配置审计规则..."
     cat <<EOL >> /etc/audit/rules.d/audit.rules
-    -w /etc/group -p wa -k identity
-    -w /etc/passwd -p wa -k identity
-    -w /etc/gshadow -p wa -k identity
-    -w /etc/shadow -p wa -k identity
-    -w /etc/security/opasswd -p wa -k identity
-    -w /var/log/lastlog -p wa -k logins
-    -w /var/run/faillock -p wa -k logins
-    EOL
+-w /etc/group -p wa -k identity
+-w /etc/passwd -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/security/opasswd -p wa -k identity
+-w /var/log/lastlog -p wa -k logins
+-w /var/run/faillock -p wa -k logins
+EOL
     service auditd restart
     log "审计规则配置完成。"
 }
@@ -55,7 +55,7 @@ configure_password_policy() {
         lcredit = -1
         ocredit = -1
         difok = 3
-        EOL
+EOL
         
     elif [ -f /etc/redhat-release ]; then
         log "检测到 CentOS/RHEL 系统，配置 /etc/pam.d/system-auth..."
@@ -85,9 +85,9 @@ configure_login_failures() {
 # 配置SSH登录超时策略
 configure_sshlogin() {
     log "配置SSH登录超时策略..."
-    echo "ClientAliveInterval 1800\nClientAliveCountMax 2" >> /etc/ssh/sshd_config
+    echo -e "ClientAliveInterval 1800\nClientAliveCountMax 2" >> /etc/ssh/sshd_config
     log "SSH登录超时策略配置完成。"
-
+}
 # 显示菜单
 show_menu() {
     echo "请选择要执行的操作："
@@ -102,7 +102,7 @@ show_menu() {
 # 主程序
 while true; do
     show_menu
-    read -p "请输入选项 (1-5): " choice
+    read -p "请输入选项 (1-6): " choice
     case $choice in
         1)
             configure_audit_rules
@@ -129,7 +129,7 @@ while true; do
             exit 0
             ;;
         *)
-            echo "无效选项，请输入 1 到 5 之间的数字。"
+            echo "无效选项，请输入 1 到 6 之间的数字。"
             ;;
     esac
 done
